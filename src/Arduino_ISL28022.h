@@ -12,14 +12,14 @@
 #define READ_TIMEOUT 50
 
 /* __________________________________________________________________________ */
-enum BusVoltageRange {
+enum class BusVoltageRange {
    RNG_16V,
    RNG_32V,
    RNG_60V
 };
 
 /* __________________________________________________________________________ */
-enum ShuntVoltageRange {
+enum class ShuntVoltageRange {
    RNG_40mv,
    RNG_80mV,
    RNG_160mv,
@@ -27,7 +27,7 @@ enum ShuntVoltageRange {
 };
 
 /* __________________________________________________________________________ */
-enum AdcConf {
+enum class AdcConf {
    CFG_12bit,
    CFG_13bit,
    CFG_14bit,
@@ -43,17 +43,19 @@ enum AdcConf {
 };
 
 /* __________________________________________________________________________ */
-enum MeasureEnabled  {
+enum class MeasureEnabled  {
    SHUNT,
    VOLTAGE,
    BOTH_SHUNT_AND_VOLTAGE
 };
 
 /* __________________________________________________________________________ */
-enum MeasureTrigger {
+enum class MeasureTrigger {
    ON_DEMAND,
    CONTINUOSLY
 };
+
+class ISL28022Class;
 
 /* _______________________________________________________CONFIGURATION CLASS */
 class ISL28022CfgClass {
@@ -66,6 +68,11 @@ class ISL28022CfgClass {
    MeasureTrigger    measure_trigger;
    uint16_t          shunt_ths;        
    uint16_t          bus_ths;
+   float             current_LSB = 0.0;
+
+
+   uint16_t          encode_config(bool reset);
+   uint16_t          calc_calibration(float shunt_res_ohm);
 
    
 
@@ -87,9 +94,9 @@ class ISL28022CfgClass {
       measure_trigger = mt;
    }
 
-   uint16_t encodeConfig(bool reset);
+   
 
-  
+   friend ISL28022Class;
 
 
 };
@@ -103,6 +110,7 @@ private:
    ISL28022CfgClass cfg{};
    float shunt_res_ohm;
 
+
    uint8_t tx_buffer[TX_BUFFER_DIM];
    uint8_t rx_buffer[RX_BUFFER_DIM];
 
@@ -110,6 +118,7 @@ private:
    bool receive(uint8_t n, uint16_t timeout);
    void write(uint8_t reg_add, uint16_t value);
    uint16_t read(uint8_t reg_add);
+   uint16_t demand_conversion(); // return bus voltage register value
 
 public:
    /* default Wire, default address 0x40 (from altium TBV) */
@@ -123,17 +132,32 @@ public:
 
    ~ISL28022Class();
 
+   operator bool();
+
    bool begin();
    bool begin(ISL28022CfgClass &_cfg);
 
-   float getBusVoltage();
-   /* return the voltage in uV */
+   float getBusVoltage(bool &overflow);
    float getShuntVoltage();
    float getCurrent();
    float getPower();
+   
+   void setShuntVoltageThreshold(float low, float high);
+   void setBusThresholds(float low, float high);
+   bool shuntUnderThVoltage();
+   bool shuntOverThVoltage();
+   bool busUnderThVoltage();
+   bool busOverThVoltage();
 
+   void forceEXTCLK_INTpinToLow();
+   void useEXTCLK_INTpinForThreshold();
 
-   friend ISL28022CfgClass;
+   /* the divider must be provided in a way that 
+                       (frequ_external)
+      freq_internal = -------------------
+                        (div + 1) * 2
+   */
+   void useExternalClock(uint8_t div);
 
 };
 

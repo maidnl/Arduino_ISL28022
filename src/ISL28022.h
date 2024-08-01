@@ -4,7 +4,32 @@
 #ifndef ISL28022_REGISTER_DESCRIPTION
 #define ISL28022_REGISTER_DESCRIPTION
 
-#define SHUNT_LSB 10 //uV
+#define SHUNT_LSB           (0.000010) // 10 uV
+#define BUS_LSB             (0.004)    // 4 mV
+#define SHUNT_TH_LSB        (0.00256)  // 2.56 mV
+#define BUS_TH_LSB          (0.256)    // 256 mV
+
+
+#define CONVERSION_READY_MASK     (1 << 1)
+#define CONVERSION_OVERFLOW_MASK (1 << 0)
+
+
+#define SHUNT_LOWER_THRESHOLD_BIT_MASK (1 << 2)
+#define SHUNT_HIGHER_THRESHOLD_BIT_MASK (1 << 3)
+
+#define BUS_LOWER_THRESHOLD_BIT_MASK (1 << 0)
+#define BUS_HIGHER_THRESHOLD_BIT_MASK (1 << 1)
+
+#define AUX_EXTCLK_ENABLE_BIT (1 << 6)
+#define AUX_FORCE_INTR        (1 << 8)
+#define AUX_INTREN            (1 << 7)
+
+
+#define FULL_SCALE_RANGE_320mv   (0.320)
+#define FULL_SCALE_RANGE_160mv   (0.160)
+#define FULL_SCALE_RANGE_080mv   (0.080)
+#define FULL_SCALE_RANGE_040mv   (0.040) 
+#define NUMERATOR_CALIB_REG      (0.04096)
 
 #define ADD_CONFIGURATION_REG           (0x00)
 #define ADD_SHUNT_VOLTAGE_REG           (0x01)

@@ -1,7 +1,37 @@
 #include "Arduino_ISL28022.h"
 
+/* -------------------------------------------------------------------------- */
+/*                         "PRIVATE" static functions                         */
+/* -------------------------------------------------------------------------- */
+
 /* __________________________________________________________________________ */
-uint16_t ISL28022CfgClass::encodeConfig(bool reset) {
+static uint16_t int2two(int32_t val, uint8_t bits) {
+   uint16_t max_value = (1 << (bits)) - 1;
+   uint16_t rv = val < 0 ? -val : val;
+   rv = ~rv;
+   rv += 1;
+   rv &= max_value;
+   return rv;
+}
+
+/* __________________________________________________________________________ */
+static int32_t two2int(uint32_t val, uint8_t bits) {
+    uint32_t rv = 0;
+    if(val & (1 << (bits-1))) {
+        rv = -(1 << bits) + (val & ((1 << bits ) -1));
+    }
+    else {
+        rv = (int32_t)val;
+    }
+    return rv;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                 ISL28022CfgClass implementation                            */
+/* -------------------------------------------------------------------------- */
+
+/* __________________________________________________________________________ */
+uint16_t ISL28022CfgClass::encode_config(bool reset) {
    uint16_t rv = 0;
    if(reset) {
       SET_RESET_AND_CALIBRATE(rv);
@@ -104,29 +134,41 @@ uint16_t ISL28022CfgClass::encodeConfig(bool reset) {
    return rv;
 }
 
-
-
 /* __________________________________________________________________________ */
-static uint16_t int2two(int32_t val, uint8_t bits) {
-   uint16_t max_value = (1 << (bits)) - 1;
-   uint16_t rv = val < 0 ? -val : val;
-   rv = ~rv;
-   rv += 1;
-   rv &= max_value;
-   return rv;
+uint16_t ISL28022CfgClass::calc_calibration(float shunt_res_ohm) {
+   float shunt_voltage_fs = 0.0;
+   if(shunt_voltage_range == ShuntVoltageRange::RNG_40mv) {
+      shunt_voltage_fs = FULL_SCALE_RANGE_040mv;
+   } else if (shunt_voltage_range == ShuntVoltageRange::RNG_80mV) {
+      shunt_voltage_fs = FULL_SCALE_RANGE_080mv;
+   } else if (shunt_voltage_range == ShuntVoltageRange::RNG_160mv) {
+      shunt_voltage_fs = FULL_SCALE_RANGE_160mv;
+   } else {
+      shunt_voltage_fs = FULL_SCALE_RANGE_320mv;
+   }
+
+   float resolution = 1.0;
+   if(shunt_adc_cfg == AdcConf::CFG_12bit) {
+      resolution = (1 << 12);
+   } else if (shunt_adc_cfg == AdcConf::CFG_13bit) {
+      resolution = (1 << 13);
+   } else if (shunt_adc_cfg == AdcConf::CFG_14bit) {
+      resolution = (1 << 14);
+   } else {
+      resolution = (1 << 15);
+   } 
+
+   float current_FS = shunt_voltage_fs / shunt_res_ohm;
+   current_LSB = current_FS / resolution;
+   float cal_reg = NUMERATOR_CALIB_REG / (shunt_res_ohm * current_LSB);
+
+   return (uint16_t)cal_reg;
 }
 
-/* __________________________________________________________________________ */
-static int32_t two2int(uint32_t val, uint8_t bits) {
-    uint32_t rv = 0;
-    if(val & (1 << (bits-1))) {
-        rv = -(1 << bits) + (val & ((1 << bits ) -1));
-    }
-    else {
-        rv = (int32_t)val;
-    }
-    return rv;
-}
+
+/* -------------------------------------------------------------------------- */
+/*                    ISL28022Class implementation                            */
+/* -------------------------------------------------------------------------- */
 
 /* _______________________________________________________DEFAULT CONSTRUCTOR */
 ISL28022Class::ISL28022Class(float _shunt_res_ohm) : 
@@ -206,23 +248,267 @@ uint16_t ISL28022Class::read(uint8_t reg_add) {
    return rv;
 }
 
+/* ____________________________________________________________________bool() */
+ISL28022Class::operator bool() {
+   return initialized;
+}
+
+
 /* ___________________________________________________________________begin() */
 bool ISL28022Class::begin() {
-   uint16_t configuration = cfg.encodeConfig(true);
+   uint16_t configuration = cfg.encode_config(true);
    write(ADD_CONFIGURATION_REG,configuration);
-   return true;
+   uint16_t calib_reg = cfg.calc_calibration(shunt_res_ohm);
+   write(ADD_CALIBRATION_REG,calib_reg);
+   initialized = true;
+   return initialized;
 }
 
 /* ___________________________________________________________________begin() */
 bool ISL28022Class::begin(ISL28022CfgClass &_cfg) {
    cfg = _cfg;
    begin();
-   return true;
+   return initialized;
+}
 
+
+uint16_t ISL28022Class::demand_conversion() {
+   uint16_t bus_voltage_reg = 0;
+   int max_attempt = 70; // max conversion time is 64 ms
+
+   if(cfg.measure_trigger == MeasureTrigger::ON_DEMAND) {
+      /* start the conversion */
+      uint16_t configuration = cfg.encode_config(false);
+      write(ADD_CONFIGURATION_REG,configuration);
+   }
+   else {
+      /* read just once if not on demand */
+      max_attempt = 1;
+   }
+
+   /* TODO: the conversion performed bit is present only in the bus 
+            voltage. Does it works also for shunt since there is
+            the same comfiguration? */
+
+   while(max_attempt > 0) { // exit also when conversion is ready via break
+      bus_voltage_reg = read(ADD_BUS_VOLTAGE_REG);
+      max_attempt--;
+      if(bus_voltage_reg & CONVERSION_READY_MASK) {
+         break;
+      }
+   }
+   
+   return bus_voltage_reg;
+   
 }
 
 
 /* _________________________________________________________getShuntVoltage() */
 float ISL28022Class::getShuntVoltage() {
-   return 1.0;
+   
+   if(cfg.enabled_measures == MeasureEnabled::SHUNT || 
+      cfg.enabled_measures == MeasureEnabled::BOTH_SHUNT_AND_VOLTAGE) {
+
+      /* ask for a new conversion only if configured this way */
+      demand_conversion();
+
+      uint16_t shunt_voltage_reg = read(ADD_SHUNT_VOLTAGE_REG);
+
+      int32_t shunt_voltage = 0; 
+
+      /* TODO: from the datasheet it is not clear if the range used depends only
+               from the ADC resolution or also from other setting (see TABEL.8 and
+               following). TO BE VERIFIED! */
+
+      if(cfg.shunt_adc_cfg == AdcConf::CFG_12bit) {
+         shunt_voltage = two2int(shunt_voltage_reg, 12);
+      } else if (cfg.shunt_adc_cfg == AdcConf::CFG_13bit) {
+         shunt_voltage = two2int(shunt_voltage_reg, 13);
+      } else if (cfg.shunt_adc_cfg == AdcConf::CFG_14bit) {
+         shunt_voltage = two2int(shunt_voltage_reg, 14);
+      } else {
+         shunt_voltage = two2int(shunt_voltage_reg, 15);
+      }
+
+      return (float)shunt_voltage * SHUNT_LSB;
+   }
+   return 0.0;
+}
+
+/* ___________________________________________________________getBusVoltage() */
+float ISL28022Class::getBusVoltage(bool &overflow) {
+    if(cfg.enabled_measures == MeasureEnabled::VOLTAGE || 
+       cfg.enabled_measures == MeasureEnabled::BOTH_SHUNT_AND_VOLTAGE) {
+
+      uint16_t bus_voltage_reg = demand_conversion();
+      overflow = (bus_voltage_reg & CONVERSION_OVERFLOW_MASK) ? true : false;
+     
+      /* TODO: it is not clear from the dataset if the reading start from 
+               bit 2 or 3 
+               there is a mismatch between the tables 12 14 and the formula
+               in the next page. TO BE VERIFIED!  */
+
+      bus_voltage_reg = bus_voltage_reg >> 2; // 2 or 3 ? 
+
+      if(cfg.bus_adc_cfg == AdcConf::CFG_12bit) {
+         bus_voltage_reg = bus_voltage_reg & ((1<<12) - 1); 
+      } else if (cfg.bus_adc_cfg == AdcConf::CFG_13bit) {
+         bus_voltage_reg = bus_voltage_reg & ((1<<13) - 1);   
+      } else if (cfg.bus_adc_cfg == AdcConf::CFG_14bit) {
+         bus_voltage_reg = bus_voltage_reg & ((1<<14) - 1);   
+      } else {
+         // seems 15 is not possible from datasheet (so 14)
+         bus_voltage_reg = bus_voltage_reg & ((1<<14) - 1); 
+      }
+
+      return (float)bus_voltage_reg * BUS_LSB;
+   }
+   return 0.0; 
+}
+
+/* ______________________________________________________________getCurrent() */
+float ISL28022Class::getCurrent() {
+   uint16_t current_reg = read(ADD_CURRENT_REG);
+   int32_t current = two2int(current_reg, 16);
+   return (float)current * cfg.current_LSB;
+}
+
+/* ________________________________________________________________getPower() */
+float ISL28022Class::getPower() {
+   float power_LSB = cfg.current_LSB * BUS_LSB;
+   uint16_t power_reg = read(ADD_POWER_REG);
+   return (float)power_reg * power_LSB;
+}
+
+/* ________________________________________________setShuntVoltageThreshold() */
+void ISL28022Class::setShuntVoltageThreshold(float low, float high) {
+   float max_value = ((1 << 7) - 1) * SHUNT_TH_LSB;
+   float min_value = -max_value;
+
+   if(low > max_value) {
+      low = max_value; 
+   }
+   if(low < min_value) {
+      low = min_value;
+   }
+
+   if(high > max_value) {
+      high = max_value; 
+   }
+   if(high < min_value) {
+      high = min_value;
+   }
+
+   low = low / SHUNT_TH_LSB;
+   high = high / SHUNT_TH_LSB;
+
+   int32_t low_reg = (uint16_t)low;
+   int32_t high_reg = (uint16_t)high;
+
+   uint16_t low_reg_LSB =  int2two(low_reg, 8);
+   uint16_t high_reg_MSB =  int2two(high_reg, 8);
+
+   uint16_t shunt_th_reg = low_reg_LSB + (high_reg_MSB << 8);
+
+   write(ADD_SHUNT_VOLTAGE_TH_REG, shunt_th_reg);
+}
+
+/* ________________________________________________________setBusThresholds() */
+void ISL28022Class::setBusThresholds(float low, float high) {
+   float max_value = ((1 << 7) - 1) * BUS_TH_LSB;
+   float min_value = -max_value;
+
+   if(low > max_value) {
+      low = max_value; 
+   }
+   if(low < min_value) {
+      low = min_value;
+   }
+
+   if(high > max_value) {
+      high = max_value; 
+   }
+   if(high < min_value) {
+      high = min_value;
+   }
+
+   low = low / BUS_TH_LSB;
+   high = high / BUS_TH_LSB;
+
+   uint16_t low_reg = (uint16_t)low;
+   uint16_t high_reg = (uint16_t)high;
+
+   uint16_t bus_th_reg = low_reg + (high_reg << 8);
+
+   write(ADD_BUS_VOLTAGE_TH_REG, bus_th_reg);
+}
+
+/* ________________________________________________________busUnderThVoltage() */
+bool ISL28022Class::busUnderThVoltage() {
+   uint16_t th = read(ADD_DCS_INTERRUPT_STATUS_REG);
+   if(th & BUS_LOWER_THRESHOLD_BIT_MASK) {
+      write(ADD_DCS_INTERRUPT_STATUS_REG, BUS_LOWER_THRESHOLD_BIT_MASK);
+      return true;
+   }
+   return false;
+}
+
+/* ________________________________________________________busOverThVoltage() */
+bool ISL28022Class::busOverThVoltage() {
+   uint16_t th = read(ADD_DCS_INTERRUPT_STATUS_REG);
+   if(th & BUS_HIGHER_THRESHOLD_BIT_MASK) {
+      write(ADD_DCS_INTERRUPT_STATUS_REG, BUS_HIGHER_THRESHOLD_BIT_MASK);
+      return true;
+   }
+   return false;
+
+}
+
+/* _____________________________________________________shuntUnderThVoltage() */
+bool ISL28022Class::shuntUnderThVoltage() {
+   uint16_t th = read(ADD_DCS_INTERRUPT_STATUS_REG);
+   if(th & SHUNT_LOWER_THRESHOLD_BIT_MASK) {
+      write(ADD_DCS_INTERRUPT_STATUS_REG, SHUNT_LOWER_THRESHOLD_BIT_MASK);
+      return true;
+   }
+   return false;
+}
+
+/* ______________________________________________________shuntOverThVoltage() */
+bool ISL28022Class::shuntOverThVoltage() {
+   uint16_t th = read(ADD_DCS_INTERRUPT_STATUS_REG);
+   if(th & SHUNT_HIGHER_THRESHOLD_BIT_MASK) {
+      write(ADD_DCS_INTERRUPT_STATUS_REG, SHUNT_HIGHER_THRESHOLD_BIT_MASK);
+      return true;
+   }
+   return false;
+}
+
+/* _________________________________________________forceEXTCLK_INTpinToLow() */
+void ISL28022Class::forceEXTCLK_INTpinToLow() {
+   uint16_t aux_reg = 0;
+
+   aux_reg |= AUX_FORCE_INTR;
+   write(ADD_AUX_CONTROL_REG,aux_reg);
+}
+
+/* ____________________________________________useEXTCLK_INTpinForThreshold() */
+void ISL28022Class::useEXTCLK_INTpinForThreshold() {
+   uint16_t aux_reg = 0;
+
+   aux_reg |= AUX_INTREN;
+   write(ADD_AUX_CONTROL_REG,aux_reg);
+}
+
+/* ________________________________________________________useExternalClock() */
+void ISL28022Class::useExternalClock(uint8_t div) {
+   if(div > 63) {
+      div = 63;
+   }
+   uint16_t aux_reg = 0;
+
+   aux_reg |= div;
+   aux_reg |= AUX_EXTCLK_ENABLE_BIT;
+
+   write(ADD_AUX_CONTROL_REG,aux_reg);
 }
