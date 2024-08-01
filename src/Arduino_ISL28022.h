@@ -7,6 +7,9 @@
 #include "ISL28022.h"
 
 #define DEFAULT_SLAVE_ADDRESS 0x40
+#define TX_BUFFER_DIM 3
+#define RX_BUFFER_DIM 2
+#define READ_TIMEOUT 50
 
 /* __________________________________________________________________________ */
 enum BusVoltageRange {
@@ -59,10 +62,12 @@ class ISL28022CfgClass {
    ShuntVoltageRange shunt_voltage_range;
    AdcConf           bus_adc_cfg;
    AdcConf           shunt_adc_cfg;
-   MeasureEnabled     enabled_measures;
+   MeasureEnabled    enabled_measures;
    MeasureTrigger    measure_trigger;
    uint16_t          shunt_ths;        
    uint16_t          bus_ths;
+
+   
 
    public:
    ISL28022CfgClass() {
@@ -82,6 +87,11 @@ class ISL28022CfgClass {
       measure_trigger = mt;
    }
 
+   uint16_t encodeConfig(bool reset);
+
+  
+
+
 };
 
 /* ______________________________________________________________DEVICE CLASS */
@@ -90,29 +100,40 @@ private:
    TwoWire &_wire;
    uint8_t slave_address;
    bool initialized;
+   ISL28022CfgClass cfg{};
+   float shunt_res_ohm;
+
+   uint8_t tx_buffer[TX_BUFFER_DIM];
+   uint8_t rx_buffer[RX_BUFFER_DIM];
+
+   void send(int add, uint8_t n, uint8_t r);
+   bool receive(uint8_t n, uint16_t timeout);
+   void write(uint8_t reg_add, uint16_t value);
+   uint16_t read(uint8_t reg_add);
 
 public:
    /* default Wire, default address 0x40 (from altium TBV) */
-   ISL28022Class();
+   ISL28022Class(float _shunt_res_ohm);
    /* default Wire, default address = a */
-   ISL28022Class(uint8_t a);
+   ISL28022Class(float _shunt_res_ohm, uint8_t a);
    /* Wire = w, default address 0x40 (from altium TBV) */
-   ISL28022Class(TwoWire &w);
+   ISL28022Class(float _shunt_res_ohm, TwoWire &w);
    /* Wire = w, default address = a */
-   ISL28022Class(TwoWire &w, uint8_t a);
+   ISL28022Class(float _shunt_res_ohm, TwoWire &w, uint8_t a);
 
    ~ISL28022Class();
 
    bool begin();
-   bool begin(ISL28022CfgClass &cfg);
+   bool begin(ISL28022CfgClass &_cfg);
 
    float getBusVoltage();
+   /* return the voltage in uV */
    float getShuntVoltage();
    float getCurrent();
    float getPower();
 
 
-
+   friend ISL28022CfgClass;
 
 };
 
