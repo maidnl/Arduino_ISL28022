@@ -117,7 +117,7 @@ private:
    void send(int add, uint8_t n, uint8_t r);
    bool receive(uint8_t n, uint16_t timeout);
    void write(uint8_t reg_add, uint16_t value);
-   uint16_t read(uint8_t reg_add);
+   
    uint16_t demand_conversion(); // return bus voltage register value
 
 public:
@@ -158,6 +158,8 @@ public:
                         (div + 1) * 2
    */
    void useExternalClock(uint8_t div);
+
+   uint16_t read(uint8_t reg_add);
 
 };
 
