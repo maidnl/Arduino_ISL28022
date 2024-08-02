@@ -4,6 +4,19 @@
 #ifndef ISL28022_REGISTER_DESCRIPTION
 #define ISL28022_REGISTER_DESCRIPTION
 
+/* Register addresses */
+#define ADD_CONFIGURATION_REG           (0x00)
+#define ADD_SHUNT_VOLTAGE_REG           (0x01)
+#define ADD_BUS_VOLTAGE_REG             (0x02)
+#define ADD_POWER_REG                   (0x03)
+#define ADD_CURRENT_REG                 (0x04)
+#define ADD_CALIBRATION_REG             (0x05)
+#define ADD_SHUNT_VOLTAGE_TH_REG        (0x06)
+#define ADD_BUS_VOLTAGE_TH_REG          (0x07)
+#define ADD_DCS_INTERRUPT_STATUS_REG    (0x08)
+#define ADD_AUX_CONTROL_REG             (0x09)
+
+
 #define SHUNT_LSB           (0.000010) // 10 uV
 #define BUS_LSB             (0.004)    // 4 mV
 #define SHUNT_TH_LSB        (0.00256)  // 2.56 mV
@@ -31,17 +44,6 @@
 #define FULL_SCALE_RANGE_040mv   (0.040) 
 #define NUMERATOR_CALIB_REG      (0.04096)
 
-#define ADD_CONFIGURATION_REG           (0x00)
-#define ADD_SHUNT_VOLTAGE_REG           (0x01)
-#define ADD_BUS_VOLTAGE_REG             (0x02)
-#define ADD_POWER_REG                   (0x03)
-#define ADD_CURRENT_REG                 (0x04)
-#define ADD_CALIBRATION_REG             (0x05)
-#define ADD_SHUNT_VOLTAGE_TH_REG        (0x06)
-#define ADD_BUS_VOLTAGE_TH_REG          (0x07)
-#define ADD_DCS_INTERRUPT_STATUS_REG    (0x08)
-#define ADD_AUX_CONTROL_REG             (0x09)
-
 #define MASK_3_BITS (0x07)
 #define MASK_4_BITS (0x0F)
 #define MASK_2_BITS (0x03)
@@ -56,7 +58,7 @@
 
 #define BUS_VOLTAGE_RANGE_16_VAL           (0)
 #define BUS_VOLTAGE_RANGE_32_VAL           (1)
-#define BUS_VOLTAGE_RANGE_60_VAL           (2)
+#define BUS_VOLTAGE_RANGE_60_VAL           (3)
 
 #define SHUNT_VOLTAGE_RANGE_40mv_VAL       (0)
 #define SHUNT_VOLTAGE_RANGE_80mv_VAL       (1)
