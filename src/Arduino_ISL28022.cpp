@@ -203,13 +203,14 @@ ISL28022Class::~ISL28022Class() {}
 
 /* ____________________________________________________________________send() */
 void ISL28022Class::send(int add, uint8_t n, uint8_t r) {
-   Wire.beginTransmission(add);
+   _wire.beginTransmission(add);
    for (int i = 0; i < n && i < TX_BUFFER_DIM; i++) {
-      Wire.write(tx_buffer[i]);
+      _wire.write(tx_buffer[i]);
+      
    }
-   Wire.endTransmission();
+   _wire.endTransmission();
    if (r > 0) {
-     Wire.requestFrom(add, r);
+     _wire.requestFrom(add, r);
    }
 }
 
@@ -218,8 +219,8 @@ bool ISL28022Class::receive(uint8_t n, uint16_t timeout) {
    uint8_t rx = 0;
    unsigned long int start = millis();
    while (millis() - start < timeout && rx < n) {
-      while (Wire.available()) {
-         uint8_t rec = Wire.read();
+      while (_wire.available()) {
+         uint8_t rec = _wire.read();
          if (rx < RX_BUFFER_DIM) {
             rx_buffer[rx++] = rec;
          }
@@ -231,8 +232,8 @@ bool ISL28022Class::receive(uint8_t n, uint16_t timeout) {
 /* ___________________________________________________________________write() */
 void ISL28022Class::write(uint8_t reg_add, uint16_t value) {
    tx_buffer[0] = reg_add;
-   tx_buffer[1] = (uint8_t)((value >> 8) & 0xF);
-   tx_buffer[2] = (uint8_t)(value & 0xF);
+   tx_buffer[1] = (uint8_t)((value >> 8) & 0xFF);
+   tx_buffer[2] = (uint8_t)(value & 0xFF);
    send(slave_address, 3, 0);
 }
 
@@ -256,6 +257,7 @@ ISL28022Class::operator bool() {
 
 /* ___________________________________________________________________begin() */
 bool ISL28022Class::begin() {
+   _wire.begin();
    uint16_t configuration = cfg.encode_config(true);
    write(ADD_CONFIGURATION_REG,configuration);
    uint16_t calib_reg = cfg.calc_calibration(shunt_res_ohm);
