@@ -55,21 +55,32 @@ enum class MeasureTrigger {
    CONTINUOSLY
 };
 
+/* __________________________________________________________________________ */
+enum class CurrentScale {
+   Scale_0,
+   Scale_1,
+   Scale_2,
+   Scale_3
+};
+
 class ISL28022Class;
 
 /* _______________________________________________________CONFIGURATION CLASS */
 class ISL28022CfgClass {
    private:
-   BusVoltageRange   bus_voltage_range;
-   ShuntVoltageRange shunt_voltage_range;
-   AdcConf           bus_adc_cfg;
-   AdcConf           shunt_adc_cfg;
-   MeasureEnabled    enabled_measures;
-   MeasureTrigger    measure_trigger;
+
+   BusVoltageRange   bus_voltage_range = BusVoltageRange::RNG_60V;;
+   ShuntVoltageRange shunt_voltage_range = ShuntVoltageRange::RNG_320mv;
+   AdcConf           bus_adc_cfg = AdcConf::CFG_15bit;
+   AdcConf           shunt_adc_cfg = AdcConf::CFG_15bit;;
+   MeasureEnabled    enabled_measures = MeasureEnabled::BOTH_SHUNT_AND_VOLTAGE;
+   MeasureTrigger    measure_trigger = MeasureTrigger::CONTINUOSLY;
    uint16_t          shunt_ths;        
    uint16_t          bus_ths;
    float             current_LSB = 0.0;
-
+   
+   CurrentScale      current_scale = CurrentScale::Scale_3;
+   float             r_shunt_value_ohm;
 
    uint16_t          encode_config(bool reset);
    uint16_t          calc_calibration(float shunt_res_ohm);
@@ -77,24 +88,73 @@ class ISL28022CfgClass {
    
 
    public:
-   ISL28022CfgClass() {
-      bus_voltage_range = BusVoltageRange::RNG_60V;
-      shunt_voltage_range = ShuntVoltageRange::RNG_320mv;
-      bus_adc_cfg = AdcConf::CFG_15bit;
-      shunt_adc_cfg = AdcConf::CFG_15bit;
-      enabled_measures = MeasureEnabled::BOTH_SHUNT_AND_VOLTAGE;
-      measure_trigger = MeasureTrigger::CONTINUOSLY;
-   }
+   ISL28022CfgClass(float shunt_ohm) : r_shunt_value_ohm(shunt_ohm){ }
    ~ISL28022CfgClass() {}
    void setBusVoltageRange(BusVoltageRange vr) { bus_voltage_range = vr; }
-   void setShuntVoltageRange(ShuntVoltageRange vr) { shunt_voltage_range = vr; }
+   void setShuntVoltageRange(ShuntVoltageRange vr) { 
+      shunt_voltage_range = vr; 
+      if(ShuntVoltageRange::RNG_40mv == vr) {
+         current_scale = CurrentScale::Scale_0;
+      } else if(ShuntVoltageRange::RNG_80mv == vr) {
+         current_scale = CurrentScale::Scale_1;
+      } else if(ShuntVoltageRange::RNG_160mv == vr) {
+         current_scale = CurrentScale::Scale_2;
+      } else if(ShuntVoltageRange::RNG_320mv == vr) {
+         current_scale = CurrentScale::Scale_3;
+      } 
+   }
+   
+
    void setBusAdcCfg(AdcConf cfg) { bus_adc_cfg = cfg; }
    void setMeasurement(MeasureEnabled me, MeasureTrigger mt) {
       enabled_measures = me;
       measure_trigger = mt;
    }
 
-   
+   float getMaxMeasurableCurrent() {
+      if(r_shunt_value_ohm <= 0) {
+         return 0.0;
+      }
+
+      if (current_scale == CurrentScale::Scale_3) {
+         return 0.320 / r_shunt_value_ohm;
+      } else if (current_scale == CurrentScale::Scale_2) {
+         return 0.160 / r_shunt_value_ohm;
+      } else if (current_scale == CurrentScale::Scale_1) {
+         return 0.080 / r_shunt_value_ohm;
+      } else if (current_scale == CurrentScale::Scale_0) {
+         return 0.040 / r_shunt_value_ohm;
+      } 
+      return 0.0;
+   }
+
+   float getResolution() {
+      if(r_shunt_value_ohm <= 0) {
+         return 0.0;
+      }
+      return 0.000010 / r_shunt_value_ohm;
+   }
+
+   float getShuntResistor() {
+      return r_shunt_value_ohm;
+   }
+
+   void setShuntResistor(float o) {
+      r_shunt_value_ohm = o;
+   }
+
+   void setCurrentScale(CurrentScale cs) {
+      current_scale = cs;
+      if(cs == CurrentScale::Scale_0) {
+         shunt_voltage_range = ShuntVoltageRange::RNG_40mv;
+      } else if(cs == CurrentScale::Scale_1) {
+         shunt_voltage_range = ShuntVoltageRange::RNG_80mv;
+      } else if(cs == CurrentScale::Scale_2) {
+         shunt_voltage_range = ShuntVoltageRange::RNG_160mv;
+      } else if(cs == CurrentScale::Scale_3) {
+         shunt_voltage_range = ShuntVoltageRange::RNG_320mv;
+      } 
+   }
 
    friend ISL28022Class;
 
@@ -107,10 +167,9 @@ private:
    TwoWire &_wire;
    uint8_t slave_address;
    bool initialized;
-   ISL28022CfgClass cfg{};
    float shunt_res_ohm;
-
-
+   ISL28022CfgClass cfg;
+   
    uint8_t tx_buffer[TX_BUFFER_DIM];
    uint8_t rx_buffer[RX_BUFFER_DIM];
 
