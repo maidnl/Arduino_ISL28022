@@ -174,28 +174,32 @@ uint16_t ISL28022CfgClass::calc_calibration(float shunt_res_ohm) {
 ISL28022Class::ISL28022Class(float _shunt_res_ohm) : 
    _wire(Wire), 
    slave_address(DEFAULT_SLAVE_ADDRESS),
-   shunt_res_ohm(_shunt_res_ohm) {
+   shunt_res_ohm(_shunt_res_ohm),
+   cfg{_shunt_res_ohm} {
 }
 
 /* _______________________________________________________________CONSTRUCTOR */
 ISL28022Class::ISL28022Class(float _shunt_res_ohm, TwoWire &w) : 
    _wire(w), 
    slave_address(DEFAULT_SLAVE_ADDRESS),
-   shunt_res_ohm(_shunt_res_ohm) {
+   shunt_res_ohm(_shunt_res_ohm),
+   cfg{_shunt_res_ohm} {
 }
 
 /* _______________________________________________________________CONSTRUCTOR */
 ISL28022Class::ISL28022Class(float _shunt_res_ohm, uint8_t a) : 
    _wire(Wire), 
    slave_address(a),
-   shunt_res_ohm(_shunt_res_ohm){
+   shunt_res_ohm(_shunt_res_ohm),
+   cfg{_shunt_res_ohm}{
 }
  
 /* _______________________________________________________________CONSTRUCTOR */ 
 ISL28022Class::ISL28022Class(float _shunt_res_ohm, TwoWire &w, uint8_t a) :
     _wire(w), 
    slave_address(a),
-   shunt_res_ohm(_shunt_res_ohm){
+   shunt_res_ohm(_shunt_res_ohm),
+   cfg{_shunt_res_ohm} {
 }
 
 /* _______________________________________________________________DE-STRUCTOR */ 
@@ -258,8 +262,15 @@ ISL28022Class::operator bool() {
 /* ___________________________________________________________________begin() */
 bool ISL28022Class::begin() {
    _wire.begin();
+   // the first time the configuration is written to reset the DEVICE
    uint16_t configuration = cfg.encode_config(true);
    write(ADD_CONFIGURATION_REG,configuration);
+   
+   // the second time the configuration is written to send the actual configuration
+   configuration = cfg.encode_config(false);
+   write(ADD_CONFIGURATION_REG,configuration);
+
+   // then set the calibration register
    uint16_t calib_reg = cfg.calc_calibration(shunt_res_ohm);
    write(ADD_CALIBRATION_REG,calib_reg);
    initialized = true;
@@ -274,6 +285,7 @@ bool ISL28022Class::begin(ISL28022CfgClass &_cfg) {
 }
 
 
+/* _______________________________________________________demand_conversion() */
 uint16_t ISL28022Class::demand_conversion() {
    uint16_t bus_voltage_reg = 0;
    int max_attempt = 70; // max conversion time is 64 ms
@@ -298,10 +310,12 @@ uint16_t ISL28022Class::demand_conversion() {
       if(bus_voltage_reg & CONVERSION_READY_MASK) {
          break;
       }
+      else if(max_attempt > 0){
+         delay(1);
+      }
    }
    
-   return bus_voltage_reg;
-   
+   return bus_voltage_reg;  
 }
 
 
