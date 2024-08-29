@@ -35,7 +35,7 @@ void setup() {
    cfg.setCurrentScale(CurrentScale::Scale_3);
    Serial.println("Scale 3: max measurable current " + String(cfg.getMaxMeasurableCurrent()) + " A");
 
-   cfg.setCurrentScale(CurrentScale::Scale_0);
+   cfg.setCurrentScale(CurrentScale::Scale_3);
 
 
    dpm.begin(cfg);
