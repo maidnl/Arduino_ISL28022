@@ -21,7 +21,7 @@ enum class BusVoltageRange {
 /* __________________________________________________________________________ */
 enum class ShuntVoltageRange {
    RNG_40mv,
-   RNG_80mV,
+   RNG_80mv,
    RNG_160mv,
    RNG_320mv
 };

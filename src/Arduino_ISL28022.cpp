@@ -46,7 +46,7 @@ uint16_t ISL28022CfgClass::encode_config(bool reset) {
 
    if(shunt_voltage_range == ShuntVoltageRange::RNG_40mv) {
       SHUNT_VOLTAGE_RANGE_40mv(rv);
-   } else if (shunt_voltage_range == ShuntVoltageRange::RNG_80mV) {
+   } else if (shunt_voltage_range == ShuntVoltageRange::RNG_80mv) {
       SHUNT_VOLTAGE_RANGE_80mv(rv);
    } else if (shunt_voltage_range == ShuntVoltageRange::RNG_160mv) {
       SHUNT_VOLTAGE_RANGE_160mv(rv);
@@ -139,7 +139,7 @@ uint16_t ISL28022CfgClass::calc_calibration(float shunt_res_ohm) {
    float shunt_voltage_fs = 0.0;
    if(shunt_voltage_range == ShuntVoltageRange::RNG_40mv) {
       shunt_voltage_fs = FULL_SCALE_RANGE_040mv;
-   } else if (shunt_voltage_range == ShuntVoltageRange::RNG_80mV) {
+   } else if (shunt_voltage_range == ShuntVoltageRange::RNG_80mv) {
       shunt_voltage_fs = FULL_SCALE_RANGE_080mv;
    } else if (shunt_voltage_range == ShuntVoltageRange::RNG_160mv) {
       shunt_voltage_fs = FULL_SCALE_RANGE_160mv;
