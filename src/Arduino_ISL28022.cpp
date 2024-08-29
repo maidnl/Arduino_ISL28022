@@ -334,7 +334,6 @@ uint16_t ISL28022CfgClass::calc_calibration(float shunt_res_ohm) {
 ISL28022Class::ISL28022Class(float _shunt_res_ohm) : 
    _wire(Wire), 
    slave_address(DEFAULT_SLAVE_ADDRESS),
-   shunt_res_ohm(_shunt_res_ohm),
    cfg{_shunt_res_ohm} {
 }
 
@@ -342,7 +341,6 @@ ISL28022Class::ISL28022Class(float _shunt_res_ohm) :
 ISL28022Class::ISL28022Class(float _shunt_res_ohm, TwoWire &w) : 
    _wire(w), 
    slave_address(DEFAULT_SLAVE_ADDRESS),
-   shunt_res_ohm(_shunt_res_ohm),
    cfg{_shunt_res_ohm} {
 }
 
@@ -350,7 +348,6 @@ ISL28022Class::ISL28022Class(float _shunt_res_ohm, TwoWire &w) :
 ISL28022Class::ISL28022Class(float _shunt_res_ohm, uint8_t a) : 
    _wire(Wire), 
    slave_address(a),
-   shunt_res_ohm(_shunt_res_ohm),
    cfg{_shunt_res_ohm}{
 }
  
@@ -358,7 +355,6 @@ ISL28022Class::ISL28022Class(float _shunt_res_ohm, uint8_t a) :
 ISL28022Class::ISL28022Class(float _shunt_res_ohm, TwoWire &w, uint8_t a) :
     _wire(w), 
    slave_address(a),
-   shunt_res_ohm(_shunt_res_ohm),
    cfg{_shunt_res_ohm} {
 }
 
@@ -436,7 +432,7 @@ bool ISL28022Class::begin(bool reset) {
    write(ADD_CONFIGURATION_REG,configuration);
 
    // then set the calibration register
-   uint16_t calib_reg = cfg.calc_calibration(shunt_res_ohm);
+   uint16_t calib_reg = cfg.calc_calibration(cfg.getShuntResistor());
    write(ADD_CALIBRATION_REG,calib_reg);
    initialized = true;
    return initialized;

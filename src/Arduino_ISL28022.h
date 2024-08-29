@@ -167,7 +167,6 @@ private:
    TwoWire &_wire;
    uint8_t slave_address;
    bool initialized;
-   float shunt_res_ohm;
    ISL28022CfgClass cfg;
    
    uint8_t tx_buffer[TX_BUFFER_DIM];
