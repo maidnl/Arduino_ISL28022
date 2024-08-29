@@ -30,7 +30,7 @@ static int32_t two2int(uint32_t val, uint8_t bits) {
 /*                 ISL28022CfgClass implementation                            */
 /* -------------------------------------------------------------------------- */
 
-#define DEBUG_CFG
+//#define DEBUG_CFG
 
 /* __________________________________________________________________________ */
 uint16_t ISL28022CfgClass::encode_config(bool reset) {
@@ -432,9 +432,6 @@ bool ISL28022Class::begin(bool reset) {
 
    // then set the calibration register
    uint16_t calib_reg = cfg.calc_calibration();
-
-   Serial.println("*** CALIBRATION REGISTER = " + String(calib_reg));
-
    write(ADD_CALIBRATION_REG,calib_reg);
    initialized = true;
    return initialized;
@@ -462,10 +459,6 @@ uint16_t ISL28022Class::demand_conversion() {
       /* read just once if not on demand */
       max_attempt = 1;
    }
-
-   /* TODO: the conversion performed bit is present only in the bus 
-            voltage. Does it works also for shunt since there is
-            the same comfiguration? */
 
    while(max_attempt > 0) { // exit also when conversion is ready via break
       bus_voltage_reg = read(ADD_BUS_VOLTAGE_REG);
@@ -552,13 +545,7 @@ float ISL28022Class::getBusVoltage(bool &overflow) {
 
 /* ______________________________________________________________getCurrent() */
 float ISL28022Class::getCurrent() {
-
-   Serial.println("CALIBRATION REGISTER  =  " + String(read(ADD_CALIBRATION_REG)));
-
-   
    uint16_t current_reg = read(ADD_CURRENT_REG);
-
-   Serial.println("Current reg raw  =  " + String(read(current_reg)));
    int32_t current = two2int(current_reg, 16);
    return (float)current * cfg.current_LSB;
 }
