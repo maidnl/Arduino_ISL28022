@@ -420,11 +420,16 @@ ISL28022Class::operator bool() {
 
 
 /* ___________________________________________________________________begin() */
-bool ISL28022Class::begin() {
+bool ISL28022Class::begin(bool reset) {
    _wire.begin();
-   // the first time the configuration is written to reset the DEVICE
-   uint16_t configuration = cfg.encode_config(true);
-   write(ADD_CONFIGURATION_REG,configuration);
+   
+   uint16_t configuration = 0;
+
+   if(reset) {
+      // the first time the configuration is written to reset the DEVICE
+      configuration = cfg.encode_config(true);
+      write(ADD_CONFIGURATION_REG,configuration);
+   }
    
    // the second time the configuration is written to send the actual configuration
    configuration = cfg.encode_config(false);
@@ -438,9 +443,9 @@ bool ISL28022Class::begin() {
 }
 
 /* ___________________________________________________________________begin() */
-bool ISL28022Class::begin(ISL28022CfgClass &_cfg) {
+bool ISL28022Class::begin(ISL28022CfgClass &_cfg, bool reset) {
    cfg = _cfg;
-   begin();
+   begin(reset);
    return initialized;
 }
 

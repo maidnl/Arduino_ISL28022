@@ -193,8 +193,8 @@ public:
 
    operator bool();
 
-   bool begin();
-   bool begin(ISL28022CfgClass &_cfg);
+   bool begin(bool reset = false);
+   bool begin(ISL28022CfgClass &_cfg, bool reset = false);
 
    float getBusVoltage(bool &overflow);
    float getShuntVoltage();
