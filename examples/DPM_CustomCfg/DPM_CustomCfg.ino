@@ -27,13 +27,13 @@ void setup() {
    ISL28022CfgClass cfg{469.0};
 
    cfg.setCurrentScale(CurrentScale::Scale_0);
-   Serial.println("Scale 0: max measurable current " + String(cfg.getMaxMeasurableCurrent()) + " A");
+   Serial.println("Scale 0: max measurable current " + String(cfg.getMaxMeasurableCurrent(),10) + " A");
    cfg.setCurrentScale(CurrentScale::Scale_1);
-   Serial.println("Scale 1: max measurable current " + String(cfg.getMaxMeasurableCurrent()) + " A");
+   Serial.println("Scale 1: max measurable current " + String(cfg.getMaxMeasurableCurrent(),10) + " A");
    cfg.setCurrentScale(CurrentScale::Scale_2);
-   Serial.println("Scale 2: max measurable current " + String(cfg.getMaxMeasurableCurrent()) + " A");
+   Serial.println("Scale 2: max measurable current " + String(cfg.getMaxMeasurableCurrent(),10) + " A");
    cfg.setCurrentScale(CurrentScale::Scale_3);
-   Serial.println("Scale 3: max measurable current " + String(cfg.getMaxMeasurableCurrent()) + " A");
+   Serial.println("Scale 3: max measurable current " + String(cfg.getMaxMeasurableCurrent(),10) + " A");
 
    cfg.setCurrentScale(CurrentScale::Scale_3);
 
