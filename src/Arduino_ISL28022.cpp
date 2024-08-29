@@ -17,7 +17,7 @@ static uint16_t int2two(int32_t val, uint8_t bits) {
 /* __________________________________________________________________________ */
 static int32_t two2int(uint32_t val, uint8_t bits) {
     uint32_t rv = 0;
-    if(val & (1 << (bits-1))) {
+    if(val & (1 << bits)) {
         rv = -(1 << bits) + (val & ((1 << bits ) -1));
     }
     else {
