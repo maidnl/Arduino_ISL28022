@@ -30,107 +30,267 @@ static int32_t two2int(uint32_t val, uint8_t bits) {
 /*                 ISL28022CfgClass implementation                            */
 /* -------------------------------------------------------------------------- */
 
+#define DEBUG_CFG
+
 /* __________________________________________________________________________ */
 uint16_t ISL28022CfgClass::encode_config(bool reset) {
    uint16_t rv = 0;
+
+   #ifdef DEBUG_CFG
+   Serial.println("config initial value = " + String(rv));
+   #endif
+   
    if(reset) {
       SET_RESET_AND_CALIBRATE(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("RESET config value = " + String(rv));
+      #endif  
    }
+
    if(bus_voltage_range == BusVoltageRange::RNG_16V) {
       BUS_VOLTAGE_RANGE_16V(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS voltage range 16V config value = " + String(rv));
+      #endif
    } else if (bus_voltage_range == BusVoltageRange::RNG_32V) {
       BUS_VOLTAGE_RANGE_32V(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS voltage range 32V config value = " + String(rv));
+      #endif
    } else {
       BUS_VOLTAGE_RANGE_60V(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS voltage range 60V config value = " + String(rv));
+      #endif
    }
 
    if(shunt_voltage_range == ShuntVoltageRange::RNG_40mv) {
       SHUNT_VOLTAGE_RANGE_40mv(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT voltage range 40mV config value = " + String(rv));
+      #endif
+      
    } else if (shunt_voltage_range == ShuntVoltageRange::RNG_80mv) {
       SHUNT_VOLTAGE_RANGE_80mv(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT voltage range 80mV config value = " + String(rv));
+      #endif
    } else if (shunt_voltage_range == ShuntVoltageRange::RNG_160mv) {
       SHUNT_VOLTAGE_RANGE_160mv(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT voltage range 160mV config value = " + String(rv));
+      #endif
    } else {
       SHUNT_VOLTAGE_RANGE_320mv(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT voltage range 320mV config value = " + String(rv));
+      #endif
+      
    }
 
    if(bus_adc_cfg == AdcConf::CFG_12bit) {
       BUS_ADC_CFG_12b(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 12 config value = " + String(rv));
+      #endif
    } else if (bus_adc_cfg == AdcConf::CFG_13bit) {
       BUS_ADC_CFG_13b(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 13 config value = " + String(rv));
+      #endif
    } else if (bus_adc_cfg == AdcConf::CFG_14bit) {
       BUS_ADC_CFG_14b(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 14 config value = " + String(rv));
+      #endif
    } else if (bus_adc_cfg == AdcConf::CFG_15bit) {
       BUS_ADC_CFG_15b(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 15 config value = " + String(rv));
+      #endif
    } else if (bus_adc_cfg == AdcConf::CFG_15bit_with_1average) {
       BUS_ADC_CFG_15b_AV1(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 15-1 config value = " + String(rv));
+      #endif
    } else if (bus_adc_cfg == AdcConf::CFG_15bit_with_2average) {
       BUS_ADC_CFG_15b_AV2(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 15-2 config value = " + String(rv));
+      #endif 
    } else if (bus_adc_cfg == AdcConf::CFG_15bit_with_4average) {
       BUS_ADC_CFG_15b_AV4(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 15-4 config value = " + String(rv));
+      #endif 
    } else if (bus_adc_cfg == AdcConf::CFG_15bit_with_8average) {
       BUS_ADC_CFG_15b_AV8(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 15-8 config value = " + String(rv));
+      #endif
    } else if (bus_adc_cfg == AdcConf::CFG_15bit_with_16average) {
       BUS_ADC_CFG_15b_AV16(rv);
+       #ifdef DEBUG_CFG
+      Serial.println("BUS adc 15-16 config value = " + String(rv));
+      #endif
    } else if (bus_adc_cfg == AdcConf::CFG_15bit_with_32average) {
       BUS_ADC_CFG_15b_AV32(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 15-32 config value = " + String(rv));
+      #endif
+      
    } else if (bus_adc_cfg == AdcConf::CFG_15bit_with_64average) {
       BUS_ADC_CFG_15b_AV64(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 15-64 config value = " + String(rv));
+      #endif
+      
    } else if (bus_adc_cfg == AdcConf::CFG_15bit_with_128average) {
       BUS_ADC_CFG_15b_AV128(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 15-128 config value = " + String(rv));
+      #endif
    } else {
       BUS_ADC_CFG_15b(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("BUS adc 15-1-default config value = " + String(rv));
+      #endif
+      
    }
 
    if(shunt_adc_cfg == AdcConf::CFG_12bit) {
       SHUNT_ADC_CFG_12b(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 12 config value = " + String(rv));
+      #endif
+      
    } else if (shunt_adc_cfg == AdcConf::CFG_13bit) {
       SHUNT_ADC_CFG_13b(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 13 config value = " + String(rv));
+      #endif
+      
    } else if (shunt_adc_cfg == AdcConf::CFG_14bit) {
       SHUNT_ADC_CFG_14b(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 14 config value = " + String(rv));
+      #endif
+      
    } else if (shunt_adc_cfg == AdcConf::CFG_15bit) {
-      SHUNT_ADC_CFG_15b(rv);
+       SHUNT_ADC_CFG_15b(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 15 config value = " + String(rv));
+      #endif
+     
    } else if (shunt_adc_cfg == AdcConf::CFG_15bit_with_1average) {
       SHUNT_ADC_CFG_15b_AV1(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 15-1 config value = " + String(rv));
+      #endif
+      
    } else if (shunt_adc_cfg == AdcConf::CFG_15bit_with_2average) {
       SHUNT_ADC_CFG_15b_AV2(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 15-2 config value = " + String(rv));
+      #endif
+      
    } else if (shunt_adc_cfg == AdcConf::CFG_15bit_with_4average) {
       SHUNT_ADC_CFG_15b_AV4(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 15-4 config value = " + String(rv));
+      #endif
+      
    } else if (shunt_adc_cfg == AdcConf::CFG_15bit_with_8average) {
       SHUNT_ADC_CFG_15b_AV8(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 15-8 config value = " + String(rv));
+      #endif
+      
    } else if (shunt_adc_cfg == AdcConf::CFG_15bit_with_16average) {
       SHUNT_ADC_CFG_15b_AV16(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 15-16 config value = " + String(rv));
+      #endif
+      
    } else if (shunt_adc_cfg == AdcConf::CFG_15bit_with_32average) {
       SHUNT_ADC_CFG_15b_AV32(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 15-32 config value = " + String(rv));
+      #endif
+      
    } else if (shunt_adc_cfg == AdcConf::CFG_15bit_with_64average) {
       SHUNT_ADC_CFG_15b_AV64(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 15-64 config value = " + String(rv));
+      #endif
+      
    } else if (shunt_adc_cfg == AdcConf::CFG_15bit_with_128average) {
       SHUNT_ADC_CFG_15b_AV128(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 15-128 config value = " + String(rv));
+      #endif
+      
    } else {
       SHUNT_ADC_CFG_15b(rv);
+      #ifdef DEBUG_CFG
+      Serial.println("SHUNT adc 15-default config value = " + String(rv));
+      #endif
+      
    }
 
    if(enabled_measures == MeasureEnabled::SHUNT) {
       if(measure_trigger == MeasureTrigger::ON_DEMAND) {
          MODE_MEASURE_SHUNT_ON_DEMAND(rv); 
+         #ifdef DEBUG_CFG
+         Serial.println("Only Shunt measure on demand config value = " + String(rv));
+         #endif
+         
       } else {
          MODE_MEASURE_SHUNT_CONTINUOS(rv);
+         #ifdef DEBUG_CFG
+         Serial.println("Only Shunt measure continuosly config value = " + String(rv));
+         #endif
+         
       }
    } else if(enabled_measures == MeasureEnabled::VOLTAGE) {
       if(measure_trigger == MeasureTrigger::ON_DEMAND) {
          MODE_MEASURE_BUS_ON_DEMAND(rv);
+         #ifdef DEBUG_CFG
+         Serial.println("Only BUS measure on demand config value = " + String(rv));
+         #endif
+         
       } else {
          MODE_MEASURE_BUS_CONTINUOS(rv);
+         #ifdef DEBUG_CFG
+         Serial.println("Only BUS measure continuosly config value = " + String(rv));
+         #endif
+         
       }
    } else if(enabled_measures == MeasureEnabled::BOTH_SHUNT_AND_VOLTAGE) {
       if(measure_trigger == MeasureTrigger::ON_DEMAND) {
          MODE_MEASURE_SHUNT_AND_BUS_ON_DEMAND(rv);
+         #ifdef DEBUG_CFG
+         Serial.println("BUS & SHUNT measure on demand config value = " + String(rv));
+         #endif
+         
       } else {
          MODE_MEASURE_SHUNT_AND_BUS_CONTINUOS(rv);
+         #ifdef DEBUG_CFG
+         Serial.println("BUS & SHUNT measure continuosly config value = " + String(rv));
+         #endif
+         
       }
    } else {
+      #ifdef DEBUG_CFG
+      Serial.println("BUS & SHUNT measure continuosly config value = " + String(rv));
+      #endif
       MODE_MEASURE_SHUNT_AND_BUS_CONTINUOS(rv);
    }
+   #ifdef DEBUG_CFG
+   Serial.println("ENCODED CONFIGURATION = " + String(rv));
+   Serial.println();
+   #endif
+
    return rv;
 }
 
