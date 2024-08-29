@@ -519,23 +519,28 @@ float ISL28022Class::getBusVoltage(bool &overflow) {
 
       uint16_t bus_voltage_reg = demand_conversion();
       overflow = (bus_voltage_reg & CONVERSION_OVERFLOW_MASK) ? true : false;
-     
-      /* TODO: it is not clear from the dataset if the reading start from 
-               bit 2 or 3 
-               there is a mismatch between the tables 12 14 and the formula
-               in the next page. TO BE VERIFIED!  */
 
-      bus_voltage_reg = bus_voltage_reg >> 2; // 2 or 3 ? 
-
-      if(cfg.bus_adc_cfg == AdcConf::CFG_12bit) {
-         bus_voltage_reg = bus_voltage_reg & ((1<<12) - 1); 
-      } else if (cfg.bus_adc_cfg == AdcConf::CFG_13bit) {
-         bus_voltage_reg = bus_voltage_reg & ((1<<13) - 1);   
-      } else if (cfg.bus_adc_cfg == AdcConf::CFG_14bit) {
-         bus_voltage_reg = bus_voltage_reg & ((1<<14) - 1);   
-      } else {
-         // seems 15 is not possible from datasheet (so 14)
-         bus_voltage_reg = bus_voltage_reg & ((1<<14) - 1); 
+      if(cfg.bus_voltage_range == BusVoltageRange::RNG_16V) {
+         bus_voltage_reg = bus_voltage_reg >> 3; 
+         bus_voltage_reg = bus_voltage_reg & ((1<<12) - 1);
+      }
+      else if(cfg.bus_voltage_range == BusVoltageRange::RNG_32V) {
+         bus_voltage_reg = bus_voltage_reg >> 3;
+         if(cfg.bus_adc_cfg == AdcConf::CFG_12bit) {
+            bus_voltage_reg = bus_voltage_reg & ((1<<12) - 1);
+         } else if (cfg.bus_adc_cfg == AdcConf::CFG_13bit) {
+            bus_voltage_reg = bus_voltage_reg & ((1<<13) - 1);   
+         }
+      }
+      else if(cfg.bus_voltage_range == BusVoltageRange::RNG_60V) {
+         bus_voltage_reg = bus_voltage_reg >> 2;
+         if(cfg.bus_adc_cfg == AdcConf::CFG_12bit) {
+            bus_voltage_reg = bus_voltage_reg & ((1<<12) - 1);
+         } else if (cfg.bus_adc_cfg == AdcConf::CFG_13bit) {
+            bus_voltage_reg = bus_voltage_reg & ((1<<13) - 1);   
+         } else if (cfg.bus_adc_cfg == AdcConf::CFG_14bit) {
+            bus_voltage_reg = bus_voltage_reg & ((1<<14) - 1);   
+         }
       }
 
       return (float)bus_voltage_reg * BUS_LSB;
