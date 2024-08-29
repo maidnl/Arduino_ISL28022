@@ -295,7 +295,7 @@ uint16_t ISL28022CfgClass::encode_config(bool reset) {
 }
 
 /* __________________________________________________________________________ */
-uint16_t ISL28022CfgClass::calc_calibration(float shunt_res_ohm) {
+uint16_t ISL28022CfgClass::calc_calibration() {
    float shunt_voltage_fs = 0.0;
    if(shunt_voltage_range == ShuntVoltageRange::RNG_40mv) {
       shunt_voltage_fs = FULL_SCALE_RANGE_040mv;
@@ -318,9 +318,9 @@ uint16_t ISL28022CfgClass::calc_calibration(float shunt_res_ohm) {
       resolution = (1 << 15);
    } 
 
-   float current_FS = shunt_voltage_fs / shunt_res_ohm;
+   float current_FS = shunt_voltage_fs / r_shunt_value_ohm;
    current_LSB = current_FS / resolution;
-   float cal_reg = NUMERATOR_CALIB_REG / (shunt_res_ohm * current_LSB);
+   float cal_reg = NUMERATOR_CALIB_REG / (r_shunt_value_ohm * current_LSB);
 
    return (uint16_t)cal_reg;
 }
@@ -432,7 +432,10 @@ bool ISL28022Class::begin(bool reset) {
    write(ADD_CONFIGURATION_REG,configuration);
 
    // then set the calibration register
-   uint16_t calib_reg = cfg.calc_calibration(cfg.getShuntResistor());
+   uint16_t calib_reg = cfg.calc_calibration();
+
+   Serial.println("*** CALIBRATION REGISTER = " + String(calib_reg));
+
    write(ADD_CALIBRATION_REG,calib_reg);
    initialized = true;
    return initialized;
@@ -550,7 +553,13 @@ float ISL28022Class::getBusVoltage(bool &overflow) {
 
 /* ______________________________________________________________getCurrent() */
 float ISL28022Class::getCurrent() {
+
+   Serial.println("CALIBRATION REGISTER  =  " + String(read(ADD_CALIBRATION_REG)));
+
+   
    uint16_t current_reg = read(ADD_CURRENT_REG);
+
+   Serial.println("Current reg raw  =  " + String(read(current_reg)));
    int32_t current = two2int(current_reg, 16);
    return (float)current * cfg.current_LSB;
 }

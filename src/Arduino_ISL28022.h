@@ -83,7 +83,7 @@ class ISL28022CfgClass {
    float             r_shunt_value_ohm;
 
    uint16_t          encode_config(bool reset);
-   uint16_t          calc_calibration(float shunt_res_ohm);
+   uint16_t          calc_calibration();
 
    
 
