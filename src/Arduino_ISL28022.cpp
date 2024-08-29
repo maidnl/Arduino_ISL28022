@@ -317,11 +317,10 @@ uint16_t ISL28022CfgClass::calc_calibration() {
    } else {
       resolution = (1 << 15);
    } 
-
+   
    float current_FS = shunt_voltage_fs / r_shunt_value_ohm;
    current_LSB = current_FS / resolution;
-   float cal_reg = NUMERATOR_CALIB_REG / (r_shunt_value_ohm * current_LSB);
-
+   float cal_reg = (NUMERATOR_CALIB_REG * resolution) / (shunt_voltage_fs);
    return (uint16_t)cal_reg;
 }
 
