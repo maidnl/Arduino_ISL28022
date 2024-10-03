@@ -24,20 +24,18 @@ void setup() {
    }
    Serial.println("*** Example on Digital Power Monitor with custom settings");
 
+   /* this make a new configuration with a different shunt resistor value */
    ISL28022CfgClass cfg{469.0};
-
+   /* this change the current range 
+    * scale 0 -> 40mv 
+    * scale 1 -> 80mv
+    * scale 2 -> 160mv
+    * scale 3 -> 320mv */
    cfg.setCurrentScale(CurrentScale::Scale_0);
-   Serial.println("Scale 0: max measurable current " + String(cfg.getMaxMeasurableCurrent(),10) + " A");
-   cfg.setCurrentScale(CurrentScale::Scale_1);
-   Serial.println("Scale 1: max measurable current " + String(cfg.getMaxMeasurableCurrent(),10) + " A");
-   cfg.setCurrentScale(CurrentScale::Scale_2);
-   Serial.println("Scale 2: max measurable current " + String(cfg.getMaxMeasurableCurrent(),10) + " A");
-   cfg.setCurrentScale(CurrentScale::Scale_3);
-   Serial.println("Scale 3: max measurable current " + String(cfg.getMaxMeasurableCurrent(),10) + " A");
+   
+   /* change here other configuration as you wish */
 
-   cfg.setCurrentScale(CurrentScale::Scale_3);
-
-
+   /* then call begin with the new configuration set */
    dpm.begin(cfg);
 
 }
